@@ -1,0 +1,231 @@
+blueprint:
+  name: "Klíma ütemezés (éjszakai preset, távollét, esti kikapcsolás hűtéskor)"
+  description: >
+    Klímához (jellemzően Better Thermostat-tal „burkolt” osztott klímához,
+    reverzibilis hőszivattyúhoz) – fűtésre és hűtésre is. A klímát nem
+    kapcsolgatja relével (az a kompresszornak árt), csak presetet vált, és
+    opcionálisan este kikapcsolja, ha épp HŰT.
+
+    1. ÉJSZAKAI PRESET – lefekvéskor és ébredéskor preset-váltás (pl. sleep /
+       eco), beállíthatóan csak akkor, ha valaki otthon van.
+    2. TÁVOLLÉT – ha a megadott személyek közül senki sincs otthon (zóna is
+       távollét), a késleltetés után távollét preset; hazaérkezéskor a
+       napszaknak megfelelő preset. (Otthon / Távol / Szabadság háromállapotú
+       működéshez a ha-futes-hu „Jelenlét alapú preset” blueprintje való.)
+    3. ESTI KIKAPCSOLÁS HŰTÉSKOR – a megadott időpontban kikapcsol, de csak
+       ha a klíma épp hűtés módban van (fűtéskor nem).
+
+    Forrás és Better Thermostat beállítási útmutató:
+    https://github.com/Gyuszko55/ha-klima-hu
+  domain: automation
+  author: Gyuszko55 (Claude segítségével)
+  source_url: https://github.com/Gyuszko55/ha-klima-hu/blob/main/blueprints/automation/hu_klima/klima_utemezes.yaml
+  homeassistant:
+    min_version: "2024.10.0"
+  input:
+    climate_entity:
+      name: Klíma (climate entitás)
+      description: A vezérelt termosztát, pl. a Better Thermostat entitása (climate.bt_...).
+      selector:
+        entity:
+          domain: climate
+    master_enable:
+      name: Fő kapcsoló (opcionális input_boolean)
+      description: Ha megadod, csak akkor működik, ha ez be van kapcsolva (pl. input_boolean.klima_auto).
+      default: []
+      selector:
+        entity:
+          domain: input_boolean
+          multiple: true
+    person_entities:
+      name: Figyelt személyek
+      description: Az éjszakai preset jelenlét-feltételéhez és a távollét-szekcióhoz.
+      default: []
+      selector:
+        entity:
+          domain: person
+          multiple: true
+
+    schedule_section:
+      name: "1. Éjszakai preset"
+      collapsed: false
+      input:
+        use_night_setback:
+          name: Éjszakai preset használata
+          default: true
+          selector:
+            boolean:
+        night_setback_requires_presence:
+          name: Csak akkor váltson, ha valaki otthon van
+          default: true
+          selector:
+            boolean:
+        night_start:
+          name: Lefekvés időpontja
+          default: "22:00:00"
+          selector:
+            time:
+        night_preset:
+          name: Éjszakai preset
+          default: "sleep"
+          selector:
+            text:
+        day_start:
+          name: Ébredés időpontja
+          default: "06:00:00"
+          selector:
+            time:
+        day_preset:
+          name: Nappali preset
+          description: Klímánál gyakran a takarékos „eco” (fűtés alacsonyabb, hűtés magasabb célhő).
+          default: "eco"
+          selector:
+            text:
+
+    away_section:
+      name: "2. Távollét"
+      collapsed: true
+      input:
+        use_away_preset:
+          name: Távollét preset használata
+          default: false
+          selector:
+            boolean:
+        away_delay:
+          name: Késleltetés távozás után
+          default:
+            minutes: 30
+          selector:
+            duration:
+        away_preset:
+          name: Távollét preset
+          default: "away"
+          selector:
+            text:
+
+    cooling_off_section:
+      name: "3. Esti kikapcsolás hűtéskor"
+      collapsed: true
+      input:
+        use_cooling_off:
+          name: Esti kikapcsolás használata
+          default: false
+          selector:
+            boolean:
+        cooling_off_time:
+          name: Kikapcsolás időpontja
+          default: "20:30:00"
+          selector:
+            time:
+        cooling_unit:
+          name: A klíma gyári entitása (opcionális)
+          description: >
+            Better Thermostat esetén a burkolt, gyári klíma-entitás (pl.
+            climate.nappali_klima): ennek az üzemmódja mutatja meg, hogy
+            HŰT-e (cool). Üresen hagyva a fenti termosztát hvac_action /
+            állapota alapján dönt (cool / cooling).
+          default: []
+          selector:
+            entity:
+              domain: climate
+              multiple: true
+
+mode: queued
+
+triggers:
+  - id: night
+    trigger: time
+    at: !input night_start
+  - id: day
+    trigger: time
+    at: !input day_start
+  - id: away_left
+    trigger: state
+    entity_id: !input person_entities
+    from: "home"
+    for: !input away_delay
+  - id: away_home
+    trigger: state
+    entity_id: !input person_entities
+    to: "home"
+  - id: cooling_off
+    trigger: time
+    at: !input cooling_off_time
+
+variables:
+  climate_entity: !input climate_entity
+  enable_list: !input master_enable
+  persons: !input person_entities
+  use_night_setback: !input use_night_setback
+  night_requires_presence: !input night_setback_requires_presence
+  night_start_v: !input night_start
+  day_start_v: !input day_start
+  night_preset: !input night_preset
+  day_preset: !input day_preset
+  use_away_preset: !input use_away_preset
+  away_preset: !input away_preset
+  use_cooling_off: !input use_cooling_off
+  unit_list: !input cooling_unit
+  anyone_home: "{{ persons | select('is_state', 'home') | list | count > 0 }}"
+  all_away: "{{ persons | count > 0 and not anyone_home }}"
+  in_night_window: >
+    {% set n = now().strftime('%H:%M:%S') %}
+    {{ (n >= night_start_v or n < day_start_v) if night_start_v > day_start_v
+       else (night_start_v <= n < day_start_v) }}
+  cooling_now: >
+    {% if unit_list | count > 0 %}
+      {{ unit_list | select('is_state', 'cool') | list | count > 0 }}
+    {% else %}
+      {{ is_state(climate_entity, 'cool') or state_attr(climate_entity, 'hvac_action') == 'cooling' }}
+    {% endif %}
+
+conditions:
+  - "{{ enable_list | count == 0 or enable_list | select('is_state', 'on') | list | count == enable_list | count }}"
+
+actions:
+  - choose:
+      - conditions:
+          - "{{ trigger.id in ['night', 'day'] }}"
+          - "{{ use_night_setback }}"
+          - "{{ not night_requires_presence or persons | count == 0 or anyone_home }}"
+        sequence:
+          - action: climate.set_preset_mode
+            target:
+              entity_id: "{{ climate_entity }}"
+            data:
+              preset_mode: "{{ night_preset if trigger.id == 'night' else day_preset }}"
+      - conditions:
+          - "{{ trigger.id == 'away_left' }}"
+          - "{{ use_away_preset and all_away }}"
+        sequence:
+          - action: climate.set_preset_mode
+            target:
+              entity_id: "{{ climate_entity }}"
+            data:
+              preset_mode: "{{ away_preset }}"
+      - conditions:
+          - "{{ trigger.id == 'away_home' }}"
+          - "{{ use_away_preset }}"
+        sequence:
+          - action: climate.set_preset_mode
+            target:
+              entity_id: "{{ climate_entity }}"
+            data:
+              preset_mode: "{{ night_preset if (use_night_setback and in_night_window) else day_preset }}"
+      - conditions:
+          - "{{ trigger.id == 'cooling_off' }}"
+          - "{{ use_cooling_off and cooling_now }}"
+        sequence:
+          - action: climate.set_hvac_mode
+            target:
+              entity_id: "{{ climate_entity }}"
+            data:
+              hvac_mode: "off"
+          - if: "{{ unit_list | count > 0 }}"
+            then:
+              - action: climate.set_hvac_mode
+                continue_on_error: true
+                target:
+                  entity_id: "{{ unit_list }}"
+                data:
+                  hvac_mode: "off"

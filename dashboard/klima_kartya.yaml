@@ -1,0 +1,25 @@
+# Klíma-kártya (a kód a ha-futes-hu tárolóból: www/hu-termosztat/hu-termosztat.js, lásd README 3. lépés).
+# Előfeltétel: HACS → „Better Thermostat UI” kártya. Minden sor elhagyható, kivéve az entity-t.
+type: custom:hu-klima-card
+entity: climate.bt_nappali_klima            # a Better Thermostat entitás (kötelező)
+name: Nappali klíma
+opening:
+  sensor: binary_sensor.teraszajto          # ugyanaz, amit a BT-ben megadtál
+  name: Teraszajtó
+  delay: 60                                 # a BT ajtó/ablak-késleltetése (mp)
+unit_entity: climate.nappali_klima          # a gyári klíma: belső hőmérője a tárcsában
+power_entity: sensor.klima_teljesitmeny     # W (nem kötelező)
+auto_entity: input_boolean.klima_auto       # a blueprint fő kapcsolója
+presence_entity: sensor.haztartas_jelenlet  # ha-futes-hu jelenlét csomag (nem kötelező)
+schedule:                                   # az automatika-sor szövegéhez, a blueprint beállításai szerint
+  night_start: "22:00"
+  night_preset: sleep
+  day_start: "06:00"
+  day_preset: eco
+  away_preset: away
+  away_delay_min: 30
+  vacation_preset: away
+# H-tarifás fogyasztás (ha-energia-elszamolas-hu), nem kötelező:
+# h_season_entity: binary_sensor.h_tariff_season
+# h_winter_yearly_entity: sensor.meroora_allas_h_eves_teli
+# h_summer_yearly_entity: sensor.meroora_allas_h_eves_nyari
