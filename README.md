@@ -28,7 +28,7 @@ Kipipálható lista, sorrendben:
 | 5 | **Better Thermostat** integráció | HACS → Integrációk → keresés: „Better Thermostat” → Letöltés → HA újraindítás → Beállítások → Integráció hozzáadása → Better Thermostat | igen |
 | 6 | **Better Thermostat UI** kártya | HACS → Frontend → keresés: „Better Thermostat UI” → Letöltés | a kártyához igen |
 | 7 | **Ajtó/ablak-nyitásérzékelő** abban a helyiségben | az érzékelő integrációja | nem, de ajánlott: nyitott ajtónál a klíma szünetel |
-| 8 | **Home Assistant Companion app** a telefonokon (helymeghatározással), `person` entitásokhoz rendelve | App Store / Google Play; Beállítások → Emberek | csak a távollét-szekcióhoz |
+| 8 | **Home Assistant Companion app** a telefonokon, `person` entitásokhoz rendelve, **„Mindig” helyhozzáféréssel és akkumulátor-korlátozás nélkül** (lásd lent: [Telefonok a távolléthez](#telefonok-a-távolléthez)) | App Store / Google Play; Beállítások → Emberek | csak a távollét-szekcióhoz |
 | 9 | **Teljesítménymérő** a klíma áramkörén (pl. Shelly EM / Plug) | a mérő integrációja | nem, csak a kártya W-kijelzéséhez |
 | 10 | *Nem kötelező:* a [ha-futes-hu](https://github.com/Gyuszko55/ha-futes-hu) **jelenlét csomagja** (Otthon / Távol / Szabadság), és a [ha-energia-elszamolas-hu](https://github.com/Gyuszko55/ha-energia-elszamolas-hu) a H-tarifás fogyasztáshoz | a tárolók README-je | nem |
 
@@ -63,11 +63,26 @@ Vagy kézzel: Beállítások → Automatizálások és jelenetek → Blueprintek
    ```
 
 2. Beállítások → Irányítópultok → ⋮ → **Erőforrások** → Hozzáadás:
-   - URL: `/local/hu-termosztat/hu-termosztat.js?v=1`
+   - URL: `/local/hu-termosztat/hu-termosztat.js?v=3`
    - Típus: **JavaScript modul**
 
    Ha nem látod az Erőforrások menüt, a profilodban kapcsold be a Haladó módot.
 3. Kártya hozzáadása → Kézi kártya → a [dashboard/klima_kartya.yaml](dashboard/klima_kartya.yaml) példája a saját entitásaiddal.
+
+   A kártya fájlja a ha-futes-hu tárolóval közös: ha ott új változat jön, töltsd le újra, és az erőforrás `?v=` számát
+   emeld meg, különben a böngésző a régit használja.
+
+### Telefonok a távolléthez
+
+A 2. szekció (távollét) a telefonok helyzetéből dönt. Ha egy telefon helyzete a háttérben nem frissül, a klíma nem
+vált távollét presetre, vagy hazaérkezéskor későn vált vissza. Minden családtag telefonján:
+
+1. a Home Assistant appnak a helymeghatározás **„Mindig engedélyezve”** és **„Pontos hely”**;
+2. akkumulátor: **„Nincs korlátozás”** – Xiaomi / Redmi / POCO telefonon az **Automatikus indítás** is legyen bekapcsolva,
+   Samsungon vedd ki az „Alvó alkalmazások” közül;
+3. az appban a háttérbeli helymeghatározás bekapcsolva, és a telefon `device_tracker`-e a `person` entitáshoz rendelve
+   (Beállítások → Emberek);
+4. ellenőrzés: elmenve a `person` pár percen belül „Távol”-ra (vagy egy zóna nevére) váltson, hazaérve „Otthon”-ra.
 
 ---
 

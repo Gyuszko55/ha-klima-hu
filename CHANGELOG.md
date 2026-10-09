@@ -1,5 +1,10 @@
 # Változások
 
+## 1.1.1 – 2026-10-10
+
+Csak dokumentáció: README „Telefonok a távolléthez” (helyhozzáférés, akkumulátor-korlátozás, ellenőrzés), a kártya
+erőforrása `?v=3` és frissítési tudnivaló; Better Thermostat útmutató: új buktató – a klíma WiFi-moduljának leszakadása.
+
 ## 1.1.0 – 2026-10-08
 
 Klíma ütemezés blueprint: ha a Home Assistant épp egy időponti váltáskor indul újra (éjszakai / nappali

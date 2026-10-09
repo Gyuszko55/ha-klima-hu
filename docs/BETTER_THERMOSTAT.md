@@ -53,7 +53,11 @@ A presetek hőfokait a létrehozás után állíthatod be. Fűtés/hűtés eset�
 3. **Kattintás az éppen aktív presetre:** a Better Thermostat UI kártya ilyenkor „nincs preset” (kézi) módba vált, és a hőfokok elállítódnak. A `hu-klima-card` ezt a kattintást elnyeli, ugyanarra a presetre kattintva nem történik semmi.
 4. **Egy egész házas ablakcsoport** bekötése: a klíma akkor is szünetel, ha a ház túlsó végén nyitnak ablakot. Csak a saját helyiség érzékelőjét add meg.
 5. **Esti kikapcsolás:** ha a klímát este kikapcsolod, azt csak hűtéskor tedd (a blueprint 3. szekciója ezt tudja). Téli fűtésnél a hajnali lehűlés után a klíma nagy teljesítménnyel indulna újra.
-6. **Gyári vs. BT entitás:** az ütemezésben, a kártyán és a hangvezérlésben mindig a `climate.bt_…` entitást használd. A gyárit csak az esti kikapcsolás „gyári entitás” mezőjében add meg.
+6. **A klíma WiFi-modulja leszakad:** ilyenkor a gyári `climate` entitás „nem elérhető”, és a Better Thermostat sem tud
+   vezérelni (a klíma az utolsó beállítással fut tovább). Egyes gyártóknál (pl. Gree) a WiFi-modul csak a klíma
+   áramtalanítása után kapcsolódik újra. Érdemes egy értesítést beállítani arra, ha a gyári entitás tartósan „nem
+   elérhető”.
+7. **Gyári vs. BT entitás:** az ütemezésben, a kártyán és a hangvezérlésben mindig a `climate.bt_…` entitást használd. A gyárit csak az esti kikapcsolás „gyári entitás” mezőjében add meg.
 
 ## Fogyasztás (nem kötelező)
 
